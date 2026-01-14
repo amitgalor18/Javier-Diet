@@ -38,7 +38,7 @@ export function HistoryLog({ history, isVisible, onClose }: HistoryLogProps) {
                             const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                             const icon = ACTION_ICONS[entry.action] || "📝";
                             // Default to ? if no user logged (legacy)
-                            const userIcon = entry.user === "Noa" ? "👩" : (entry.user === "Amit" ? "🧑" : "👤");
+                            const userIcon = entry.user === "Noa" ? "👩🏻" : (entry.user === "Amit" ? "👨🏻‍🦰" : "👤");
 
                             return (
                                 <div key={i} className="flex justify-between items-center bg-white dark:bg-slate-700 p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 shadow-sm">
