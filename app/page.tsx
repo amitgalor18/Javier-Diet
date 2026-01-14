@@ -49,9 +49,9 @@ export default function Home() {
   if (loading) return <div className="flex h-screen items-center justify-center font-pixel text-xl">Loading Javier...</div>;
 
   return (
-    <div className="h-[100svh] w-full sm:w-auto sm:h-auto sm:min-h-screen bg-neutral-900 flex items-center justify-center p-0 sm:p-4">
+    <div className="h-[100dvh] w-full sm:w-auto sm:h-auto sm:min-h-screen bg-neutral-900 flex items-center justify-center p-0 sm:p-4">
       {/* Mobile container - optimized for viewport height */}
-      <div className="w-full sm:max-w-[430px] h-full sm:h-[90vh] sm:max-h-[900px] bg-white sm:border-4 border-gray-500 sm:rounded-3xl shadow-[0px_0px_20px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col font-pixel">
+      <div className="w-full sm:max-w-[430px] h-full sm:h-[90vh] sm:max-h-[900px] bg-white sm:border-4 border-gray-500 sm:rounded-3xl shadow-[0px_0px_20px_rgba(0,0,0,0.5)] relative overflow-y-auto sm:overflow-hidden flex flex-col font-pixel">
 
         {/* Background Layer */}
         <div
@@ -65,7 +65,7 @@ export default function Home() {
         )}
 
         {/* Content Layer */}
-        <div className="relative z-10 flex flex-col h-full p-6 mobile-safe-bottom sm:pb-2">
+        <div className="relative z-10 flex flex-col min-h-full p-6 pb-32 sm:pb-2">
           {/* Header Row */}
           <div className="flex-none mt-2 flex items-start gap-3">
             {/* Left: Status */}
