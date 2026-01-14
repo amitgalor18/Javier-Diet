@@ -49,7 +49,7 @@ export default function Home() {
   if (loading) return <div className="flex h-screen items-center justify-center font-pixel text-xl">Loading Javier...</div>;
 
   return (
-    <div className="fixed inset-0 sm:static sm:min-h-screen bg-neutral-900 sm:flex sm:items-center sm:justify-center p-0 sm:p-4">
+    <div className="h-[100svh] w-full sm:w-auto sm:h-auto sm:min-h-screen bg-neutral-900 flex items-center justify-center p-0 sm:p-4">
       {/* Mobile container - optimized for viewport height */}
       <div className="w-full sm:max-w-[430px] h-full sm:h-[90vh] sm:max-h-[900px] bg-white sm:border-4 border-gray-500 sm:rounded-3xl shadow-[0px_0px_20px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col font-pixel">
 
