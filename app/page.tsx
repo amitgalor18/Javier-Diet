@@ -61,7 +61,7 @@ export default function Home() {
 
         {/* Day/Night Overlay */}
         {isNight && (
-          <div className="absolute inset-0 z-0 bg-indigo-900 opacity-40 mix-blend-multiply pointer-events-none transition-all duration-1000" />
+          <div className="fixed inset-0 sm:absolute sm:inset-0 z-0 bg-indigo-900 opacity-40 mix-blend-multiply pointer-events-none transition-all duration-1000" />
         )}
 
         {/* Content Layer */}
