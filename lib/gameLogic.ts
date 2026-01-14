@@ -4,19 +4,37 @@ export const MAX_HEALTH = 100;
 export const DECAY_AMOUNT = 5;
 
 // Decay Check Logic
-export function checkDecay(lastCheck: number, currentHealth: number): { newHealth: number; decayed: boolean } {
+export function checkDecay(lastCheck: number, currentHealth: number, currentStreak: number): { newHealth: number; newStreak: number; decayed: boolean } {
     const now = Date.now();
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
     if (now - lastCheck > ONE_DAY) {
         const daysPassed = Math.floor((now - lastCheck) / ONE_DAY);
         const damage = daysPassed * DECAY_AMOUNT;
+        // If decayed (missed 24h), streak resets
         return {
             newHealth: Math.max(0, currentHealth - damage),
+            newStreak: 0,
             decayed: true
         };
     }
-    return { newHealth: currentHealth, decayed: false };
+    return { newHealth: currentHealth, newStreak: currentStreak, decayed: false };
+}
+
+export function calculateStreak(currentStreak: number, lastCheck: number): number {
+    const lastDate = new Date(lastCheck);
+    const today = new Date();
+
+    // Normalize to midnight to compare calendar days
+    lastDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - lastDate.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // Round to handle DST/slight drifts if any
+
+    if (diffDays === 0) return currentStreak;
+    if (diffDays === 1) return currentStreak + 1;
+    return 1; // Gap > 1 day, reset to 1
 }
 
 export function calculateHealth(current: number, change: number): number {

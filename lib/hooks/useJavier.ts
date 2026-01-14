@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
-import { calculateHealth, checkDecay } from "../gameLogic";
+import { calculateHealth, checkDecay, calculateStreak } from "../gameLogic";
 
 const DOC_ID = "couples_state/our_apartment";
 
 export function useJavier() {
     const [health, setHealth] = useState(75); // Default
     const [streak, setStreak] = useState(0);
+    const [lastCheck, setLastCheck] = useState(Date.now());
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -25,12 +26,13 @@ export function useJavier() {
                 const data = docSnap.data();
                 setHealth(data.health);
                 setStreak(data.streak || 0);
+                setLastCheck(data.last_check || Date.now());
                 setHistory(data.history || []);
 
                 // Check for decay on load/update
-                const { newHealth, decayed } = checkDecay(data.last_check || Date.now(), data.health);
+                const { newHealth, newStreak, decayed } = checkDecay(data.last_check || Date.now(), data.health, data.streak || 0);
                 if (decayed) {
-                    updateJavierState(newHealth, data.streak);
+                    updateJavierState(newHealth, newStreak);
                 }
             } else {
                 // Init doc if missing
@@ -53,9 +55,11 @@ export function useJavier() {
 
     const updateJavier = async (change: number, user: string = "Unknown") => {
         const newHealth = calculateHealth(health, change);
+        const newStreak = calculateStreak(streak, lastCheck);
 
         if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
             setHealth(newHealth);
+            setStreak(newStreak);
             return;
         }
 
@@ -63,6 +67,7 @@ export function useJavier() {
             const ref = doc(db, DOC_ID);
             await updateDoc(ref, {
                 health: newHealth,
+                streak: newStreak,
                 last_check: Date.now(),
                 // Append to history
                 history: arrayUnion({
@@ -75,6 +80,7 @@ export function useJavier() {
         } catch (e) {
             console.error("Update failed:", e);
             setHealth(newHealth); // Optimistic update
+            setStreak(newStreak);
         }
     };
 
