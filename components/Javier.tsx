@@ -1,45 +1,64 @@
-import { cn } from "@/lib/utils";
 
 interface JavierProps {
     health: number;
 }
 
-export function Javier({ health }: JavierProps) {
-    // Determine mood based on health
-    let mood = "neutral";
-    let animation = "animate-bounce";
+type SpriteConfig = {
+    url: string;
+    frames: number;
+};
 
-    if (health > 80) {
-        mood = "ecstatic";
-        animation = "animate-bounce duration-700";
-    } else if (health > 50) {
-        mood = "chilling";
-        animation = "animate-pulse";
-    } else if (health > 20) {
-        mood = "meh";
-        animation = "";
-    } else {
-        mood = "sick";
-        animation = "grayscale";
-    }
+export function Javier({ health }: JavierProps) {
+    // Configuration for sprites
+    // "Some are 5 frames" -> Assuming key ones are 5, others might be 4.
+    // Adjust these based on visual feedback if needed.
+    const SPRITES: Record<string, SpriteConfig> = {
+        ecstatic: { url: "/assets/cat-jump.png", frames: 5 },
+        happy: { url: "/assets/cat-idle.png", frames: 4 },
+        bored: { url: "/assets/cat-bored.png", frames: 5 },
+        sick: { url: "/assets/cat-sick.png", frames: 5 }
+    };
+
+    let mood = "happy";
+    if (health >= 80) mood = "ecstatic";
+    else if (health >= 50) mood = "happy";
+    else if (health >= 20) mood = "bored";
+    else mood = "sick";
+
+    const config = SPRITES[mood];
+
+    // Animation Logic:
+    // To loop N frames perfectly with `background-position: 100% 0`,
+    // we use `steps(N-1)`.
+    // Example: 4 frames -> steps(3). 5 frames -> steps(4).
+    const stepCount = config.frames - 1;
 
     return (
-        <div className="relative w-48 h-48 flex items-center justify-center">
-            {/* Placeholder Pixel Art Cat (CSS representation) */}
-            <div className={cn("w-32 h-32 bg-orange-400 border-4 border-black relative transition-all", animation)}>
-                {/* Ears */}
-                <div className="absolute -top-4 left-2 w-8 h-8 bg-orange-400 border-4 border-black" />
-                <div className="absolute -top-4 right-2 w-8 h-8 bg-orange-400 border-4 border-black" />
+        // Width reduced (w-64 -> w-56). Height increased (h-64 -> h-72) to prevent cropping.
+        <div className="relative w-56 h-72 transition-transform duration-500">
+            {/* Shadow */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-32 h-6 bg-black/20 rounded-full blur-md" />
 
-                {/* Face */}
-                <div className="absolute top-10 left-6 w-4 h-4 bg-black" /> {/* Eye L */}
-                <div className="absolute top-10 right-6 w-4 h-4 bg-black" /> {/* Eye R */}
-                <div className="absolute top-16 left-12 w-8 h-4 bg-pink-300 border-2 border-black" /> {/* Nose/Mouth */}
+            {/* Sprite */}
+            <div
+                className="w-full h-full pixelated translate-y-4"
+                style={{
+                    backgroundImage: `url('${config.url}')`,
+                    // Width is logical (frames * 100%). Height is auto to preserve aspect ratio (fixes squish).
+                    // This naturally crops top/bottom if container is shorter than image.
+                    backgroundSize: `${config.frames * 100}% auto`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPositionY: '45%', // Slightly lower to ensure feet are visible while keeping head
+                    animation: `sprite-animation 0.8s steps(${stepCount}) infinite`
+                }}
+            />
 
-                {/* Dynamic Mood Element */}
-                {mood === "sick" && <div className="absolute top-8 left-0 w-full text-center text-green-800 font-bold text-xs">Sick...</div>}
-                {mood === "ecstatic" && <div className="absolute -top-10 w-full text-center text-xl">✨</div>}
-            </div>
+            <style jsx>{`
+                @keyframes sprite-animation {
+                    from { background-position-x: 0; }
+                    to { background-position-x: 100%; }
+                }
+            `}</style>
         </div>
     );
 }

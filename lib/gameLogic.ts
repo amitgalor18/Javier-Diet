@@ -1,4 +1,4 @@
-import { tips, getTip, Tip } from './tips';
+import { TIPS_DB, Tip, TipCategory } from './tipsDb';
 
 export const MAX_HEALTH = 100;
 export const DECAY_AMOUNT = 5;
@@ -23,6 +23,30 @@ export function calculateHealth(current: number, change: number): number {
     return Math.min(MAX_HEALTH, Math.max(0, current + change));
 }
 
-export function generateTip(actionId: string): string {
-    return getTip(actionId);
+export function generateTip(actionId: string, tag?: string): string {
+    // 1. Specific Tag Match
+    if (tag && tag !== "general") {
+        const specificMatch = TIPS_DB.find(t =>
+            t.keywords.some(k => k.toLowerCase() === tag.toLowerCase())
+        );
+        if (specificMatch) return specificMatch.text;
+    }
+
+    // 2. Category Fallback
+    let targetCategory: TipCategory = "Mindset";
+
+    if (actionId === "healthy") targetCategory = "Nutrition";
+    if (actionId === "workout") targetCategory = "Workout";
+    if (actionId === "water") targetCategory = "Hydration";
+    if (actionId === "treat") targetCategory = "Damage Control";
+
+    // Filter by category
+    const categoryTips = TIPS_DB.filter(t => t.category === targetCategory);
+
+    // Fallback to Mindset if no tips found in category (shouldn't happen)
+    const pool = categoryTips.length > 0 ? categoryTips : TIPS_DB.filter(t => t.category === "Mindset");
+
+    // Pick random
+    const randomTip = pool[Math.floor(Math.random() * pool.length)];
+    return randomTip.text;
 }

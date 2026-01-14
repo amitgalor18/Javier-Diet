@@ -28,6 +28,9 @@ body {
 }
 
 @layer utilities {
+  .pixelated {
+    image-rendering: pixelated;
+  }
   .text-balance {
     text-wrap: balance;
   }

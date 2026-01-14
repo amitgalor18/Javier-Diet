@@ -1,62 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Javier } from "@/components/Javier";
 import { StatusPanel } from "@/components/StatusPanel";
 import { ActionMenu } from "@/components/ActionMenu";
-import { SpeechBubble } from "@/components/SpeechBubble";
+import { PersistentSpeechBubble } from "@/components/PersistentSpeechBubble";
+import { HistoryLog } from "@/components/HistoryLog";
 import { generateTip } from "@/lib/gameLogic";
 import { useJavier } from "@/lib/hooks/useJavier";
+import { Refrigerator } from "lucide-react";
 
 export default function Home() {
-  const { health, streak, updateJavier, loading } = useJavier();
+  const { health, streak, updateJavier, history, loading } = useJavier();
   const [currentTip, setCurrentTip] = useState<string | null>(null);
   const [showTip, setShowTip] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [currentUser, setCurrentUser] = useState<"Amit" | "Noa">("Amit");
 
-  const handleAction = (action: string) => {
-    // Calculate healthy change
+  // Day/Night Logic
+  const [isNight, setIsNight] = useState(false);
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setIsNight(hour >= 18 || hour < 6);
+  }, []);
+
+  const handleAction = (action: string, tag?: string) => {
     let change = 0;
     if (action === "healthy") change = 5;
     if (action === "workout") change = 15;
     if (action === "treat") change = -5;
     if (action === "water") change = 2;
 
-    updateJavier(change);
+    updateJavier(change, currentUser);
 
-    // Generate and show tip
-    const tip = generateTip(action);
+    const tip = generateTip(action, tag);
     setCurrentTip(tip);
     setShowTip(true);
-
-    // Hide tip after 3 seconds
-    setTimeout(() => setShowTip(false), 3000);
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center font-pixel">Loading Javier...</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center font-pixel text-xl">Loading Javier...</div>;
 
   return (
-    <div className="min-h-screen bg-javier-bg flex items-center justify-center p-4">
-      {/* Mobile container */}
-      <div className="w-full max-w-[430px] h-full min-h-[800px] bg-white border-4 border-gray-900 rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden flex flex-col">
-        {/* Living Room Background */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('/grid.svg')] bg-center" />
+    <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
+      {/* Mobile container - optimized for viewport height */}
+      <div className="w-full max-w-[430px] h-[90vh] max-h-[900px] bg-white border-4 border-gray-500 rounded-3xl shadow-[0px_0px_20px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col font-pixel">
+
+        {/* Background Layer */}
+        <div
+          className="absolute inset-0 z-0 bg-cover bg-center pixelated"
+          style={{ backgroundImage: "url('/assets/room-bg.png')" }}
+        />
+
+        {/* Day/Night Overlay */}
+        {isNight && (
+          <div className="absolute inset-0 z-0 bg-indigo-900 opacity-40 mix-blend-multiply pointer-events-none transition-all duration-1000" />
+        )}
 
         {/* Content Layer */}
-        <div className="relative z-10 flex flex-col h-full p-6 gap-6">
-          {/* Header */}
-          <StatusPanel health={health} streak={streak} />
+        <div className="relative z-10 flex flex-col h-full p-6 pb-2">
+          {/* Header Row */}
+          <div className="flex-none mt-2 flex justify-between items-start">
+            {/* Left: Status */}
+            <div className="flex flex-col gap-2">
+              <StatusPanel health={health} streak={streak} />
 
-          {/* Main Stage */}
-          <div className="flex-1 flex flex-col items-center justify-center relative">
-            <SpeechBubble text={currentTip} isVisible={showTip} />
+              {/* Fridge Button (Now below status) */}
+              <button
+                onClick={() => setShowHistory(true)}
+                className="self-start bg-white border-4 border-black p-2 rounded-xl hover:bg-gray-100 active:scale-95 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] flex items-center gap-2"
+              >
+                <Refrigerator className="w-5 h-5 text-blue-500" />
+                <span className="text-[10px] uppercase font-bold text-gray-700">Logs</span>
+              </button>
+            </div>
+
+            {/* Right: User Toggle */}
+            <button
+              onClick={() => setCurrentUser(prev => prev === "Amit" ? "Noa" : "Amit")}
+              className={`flex flex-col items-center justify-center p-2 border-4 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all ${currentUser === "Amit" ? "bg-blue-100" : "bg-pink-100"}`}
+            >
+              <span className="text-2xl">{currentUser === "Amit" ? "🧑" : "👩"}</span>
+              <span className="text-[10px] uppercase font-bold mt-1">{currentUser}</span>
+            </button>
+          </div>
+
+          {/* Spacer - Flexible but pushes Javier higher up than before */}
+          <div className="flex-1 min-h-[40px]" />
+
+          {/* Main Stage (Javier + Bubble) */}
+          <div className="flex-none flex flex-col items-center justify-end relative mb-8">
+            <PersistentSpeechBubble
+              text={currentTip}
+              isVisible={showTip}
+              onDismiss={() => setShowTip(false)}
+            />
             <Javier health={health} />
           </div>
 
-          {/* Controls */}
-          <div className="mb-4">
+          {/* Controls (Fixed Bottom) */}
+          <div className="flex-none mb-4">
             <ActionMenu onAction={handleAction} />
           </div>
         </div>
+
+        {/* Modals */}
+        <HistoryLog
+          history={history}
+          isVisible={showHistory}
+          onClose={() => setShowHistory(false)}
+        />
       </div>
     </div>
   );
