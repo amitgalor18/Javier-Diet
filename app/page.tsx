@@ -55,7 +55,7 @@ export default function Home() {
 
         {/* Background Layer */}
         <div
-          className="absolute inset-0 z-0 bg-cover bg-center pixelated"
+          className="fixed inset-0 sm:absolute sm:inset-0 z-0 bg-cover bg-center pixelated"
           style={{ backgroundImage: "url('/assets/room-bg.png')" }}
         />
 
