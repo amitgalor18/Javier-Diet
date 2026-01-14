@@ -31,7 +31,12 @@ body {
   .pixelated {
     image-rendering: pixelated;
   }
+
   .text-balance {
     text-wrap: balance;
+  }
+
+  .mobile-safe-bottom {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }
 }

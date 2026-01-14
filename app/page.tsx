@@ -49,9 +49,9 @@ export default function Home() {
   if (loading) return <div className="flex h-screen items-center justify-center font-pixel text-xl">Loading Javier...</div>;
 
   return (
-    <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 sm:static sm:min-h-screen bg-neutral-900 sm:flex sm:items-center sm:justify-center p-0 sm:p-4">
       {/* Mobile container - optimized for viewport height */}
-      <div className="w-full sm:max-w-[430px] h-[100dvh] sm:h-[90vh] sm:max-h-[900px] bg-white sm:border-4 border-gray-500 sm:rounded-3xl shadow-[0px_0px_20px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col font-pixel">
+      <div className="w-full sm:max-w-[430px] h-full sm:h-[90vh] sm:max-h-[900px] bg-white sm:border-4 border-gray-500 sm:rounded-3xl shadow-[0px_0px_20px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col font-pixel">
 
         {/* Background Layer */}
         <div
@@ -65,7 +65,7 @@ export default function Home() {
         )}
 
         {/* Content Layer */}
-        <div className="relative z-10 flex flex-col h-full p-6 pb-2">
+        <div className="relative z-10 flex flex-col h-full p-6 mobile-safe-bottom sm:pb-2">
           {/* Header Row */}
           <div className="flex-none mt-2 flex items-start gap-3">
             {/* Left: Status */}
@@ -107,7 +107,7 @@ export default function Home() {
           </div>
 
           {/* Controls (Fixed Bottom) */}
-          <div className="flex-none mb-4">
+          <div className="flex-none mb-0">
             <ActionMenu onAction={handleAction} />
           </div>
         </div>
