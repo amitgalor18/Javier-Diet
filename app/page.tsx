@@ -5,8 +5,9 @@ import { Javier } from "@/components/Javier";
 import { StatusPanel } from "@/components/StatusPanel";
 import { ActionMenu } from "@/components/ActionMenu";
 import { PersistentSpeechBubble } from "@/components/PersistentSpeechBubble";
+import { ThoughtBubble } from "@/components/ThoughtBubble";
 import { HistoryLog } from "@/components/HistoryLog";
-import { generateTip } from "@/lib/gameLogic";
+import { generateTip, getRandomMindsetTip } from "@/lib/gameLogic";
 import { useJavier } from "@/lib/hooks/useJavier";
 import { Refrigerator } from "lucide-react";
 
@@ -39,6 +40,12 @@ export default function Home() {
     setShowTip(true);
   };
 
+  const handleThoughtBubble = () => {
+    const tip = getRandomMindsetTip();
+    setCurrentTip(tip);
+    setShowTip(true);
+  };
+
   if (loading) return <div className="flex h-screen items-center justify-center font-pixel text-xl">Loading Javier...</div>;
 
   return (
@@ -60,9 +67,9 @@ export default function Home() {
         {/* Content Layer */}
         <div className="relative z-10 flex flex-col h-full p-6 pb-2">
           {/* Header Row */}
-          <div className="flex-none mt-2 flex justify-between items-start">
+          <div className="flex-none mt-2 flex items-start gap-3">
             {/* Left: Status */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 flex-1">
               <StatusPanel health={health} streak={streak} />
 
               {/* Fridge Button (Now below status) */}
@@ -78,9 +85,9 @@ export default function Home() {
             {/* Right: User Toggle */}
             <button
               onClick={() => setCurrentUser(prev => prev === "Amit" ? "Noa" : "Amit")}
-              className={`flex flex-col items-center justify-center p-2 border-4 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all ${currentUser === "Amit" ? "bg-blue-100" : "bg-pink-100"}`}
+              className={`flex flex-col items-center justify-center p-2 border-4 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all ${currentUser === "Amit" ? "bg-blue-100" : "bg-pink-100"} text-gray-900`}
             >
-              <span className="text-2xl">{currentUser === "Amit" ? "🧑" : "👩"}</span>
+              <span className="text-2xl">{currentUser === "Amit" ? "👨🏻‍🦰" : "👩🏻"}</span>
               <span className="text-[10px] uppercase font-bold mt-1">{currentUser}</span>
             </button>
           </div>
@@ -95,6 +102,7 @@ export default function Home() {
               isVisible={showTip}
               onDismiss={() => setShowTip(false)}
             />
+            <ThoughtBubble onOpenTip={handleThoughtBubble} />
             <Javier health={health} />
           </div>
 

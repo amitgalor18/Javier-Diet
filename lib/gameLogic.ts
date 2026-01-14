@@ -50,3 +50,9 @@ export function generateTip(actionId: string, tag?: string): string {
     const randomTip = pool[Math.floor(Math.random() * pool.length)];
     return randomTip.text;
 }
+
+export function getRandomMindsetTip(): string {
+    const mindsetTips = TIPS_DB.filter(t => t.category === "Mindset");
+    if (mindsetTips.length === 0) return "Stay positive!";
+    return mindsetTips[Math.floor(Math.random() * mindsetTips.length)].text;
+}

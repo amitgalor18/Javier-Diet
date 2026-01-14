@@ -1,3 +1,4 @@
+import { useState, useCallback, useEffect } from "react";
 
 interface JavierProps {
     health: number;
@@ -8,10 +9,19 @@ type SpriteConfig = {
     frames: number;
 };
 
+
+type Heart = {
+    id: number;
+    left: number; // percentage
+    size: number; // px
+    duration: number; // ms
+    delay: number; // ms
+};
+
 export function Javier({ health }: JavierProps) {
+    const [hearts, setHearts] = useState<Heart[]>([]);
+
     // Configuration for sprites
-    // "Some are 5 frames" -> Assuming key ones are 5, others might be 4.
-    // Adjust these based on visual feedback if needed.
     const SPRITES: Record<string, SpriteConfig> = {
         ecstatic: { url: "/assets/cat-jump.png", frames: 5 },
         happy: { url: "/assets/cat-idle.png", frames: 4 },
@@ -26,16 +36,65 @@ export function Javier({ health }: JavierProps) {
     else mood = "sick";
 
     const config = SPRITES[mood];
-
-    // Animation Logic:
-    // To loop N frames perfectly with `background-position: 100% 0`,
-    // we use `steps(N-1)`.
-    // Example: 4 frames -> steps(3). 5 frames -> steps(4).
     const stepCount = config.frames - 1;
 
+    const handleInteract = useCallback(() => {
+        // Optional: Play Sound
+        // const audio = new Audio('/assets/purr.mp3');
+        // audio.play().catch(() => {}); // catch if no interaction or file missing
+
+        let count = 3;
+        let baseSize = 24;
+        let duration = 1000;
+
+        // Logic based on mood
+        if (mood === "ecstatic") {
+            count = 5;
+            baseSize = 32;
+            duration = 1200;
+        } else if (mood === "bored" || mood === "sick") {
+            count = 2;
+            baseSize = 16;
+            duration = 600;
+        }
+
+        const newHearts: Heart[] = Array.from({ length: count }).map((_, i) => ({
+            id: Date.now() + Math.random(),
+            left: 50 + (Math.random() * 60 - 30), // Center +- 30%
+            size: baseSize + (Math.random() * 10 - 5),
+            duration: duration + (Math.random() * 200),
+            delay: i * 50
+        }));
+
+        setHearts(prev => [...prev, ...newHearts]);
+
+        // Cleanup
+        setTimeout(() => {
+            setHearts(prev => prev.filter(h => !newHearts.find(nh => nh.id === h.id)));
+        }, duration + 500);
+    }, [mood]);
+
     return (
-        // Width reduced (w-64 -> w-56). Height increased (h-64 -> h-72) to prevent cropping.
-        <div className="relative w-56 h-72 transition-transform duration-500">
+        <div
+            onClick={handleInteract}
+            className="relative w-56 h-72 transition-transform duration-500 cursor-pointer active:scale-95 touch-manipulation"
+        >
+            {/* Visual Feedback: Hearts */}
+            {hearts.map(heart => (
+                <div
+                    key={heart.id}
+                    className="absolute bottom-1/3 z-20 pointer-events-none select-none text-red-500"
+                    style={{
+                        left: `${heart.left}%`,
+                        fontSize: `${heart.size}px`,
+                        animation: `floatUp ${heart.duration}ms ease-out forwards`,
+                        animationDelay: `${heart.delay}ms`
+                    }}
+                >
+                    ❤️
+                </div>
+            ))}
+
             {/* Shadow */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-32 h-6 bg-black/20 rounded-full blur-md" />
 
@@ -44,11 +103,9 @@ export function Javier({ health }: JavierProps) {
                 className="w-full h-full pixelated translate-y-4"
                 style={{
                     backgroundImage: `url('${config.url}')`,
-                    // Width is logical (frames * 100%). Height is auto to preserve aspect ratio (fixes squish).
-                    // This naturally crops top/bottom if container is shorter than image.
                     backgroundSize: `${config.frames * 100}% auto`,
                     backgroundRepeat: 'no-repeat',
-                    backgroundPositionY: '45%', // Slightly lower to ensure feet are visible while keeping head
+                    backgroundPositionY: '45%',
                     animation: `sprite-animation 0.8s steps(${stepCount}) infinite`
                 }}
             />
@@ -57,6 +114,11 @@ export function Javier({ health }: JavierProps) {
                 @keyframes sprite-animation {
                     from { background-position-x: 0; }
                     to { background-position-x: 100%; }
+                }
+                @keyframes floatUp {
+                    0% { transform: translateY(0) scale(0.5); opacity: 1; }
+                    50% { opacity: 0.8; }
+                    100% { transform: translateY(-100px) scale(1.2); opacity: 0; }
                 }
             `}</style>
         </div>

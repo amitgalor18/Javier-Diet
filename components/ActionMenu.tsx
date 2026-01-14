@@ -82,7 +82,7 @@ export function ActionMenu({ onAction }: ActionMenuProps) {
                     onClick={() => handleMainClick(action.id, action.category)}
                     className={`${action.color} border-4 border-gray-900 dark:border-gray-900 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all group`}
                 >
-                    <span className="text-2xl filter grayscale contrast-125 group-hover:scale-110 transition-transform duration-200">{action.emoji}</span>
+                    <span className="text-2xl contrast-125 group-hover:scale-110 transition-transform duration-200">{action.emoji}</span>
                     <span className="text-[10px] font-bold uppercase tracking-wide text-gray-900">{action.label}</span>
                 </button>
             ))}
