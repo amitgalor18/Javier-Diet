@@ -83,15 +83,20 @@ export function Javier({ health }: JavierProps) {
             {hearts.map(heart => (
                 <div
                     key={heart.id}
-                    className="absolute bottom-1/3 z-20 pointer-events-none select-none text-red-500"
+                    className="absolute bottom-1/3 z-20 pointer-events-none select-none"
                     style={{
                         left: `${heart.left}%`,
-                        fontSize: `${heart.size}px`,
+                        width: `${heart.size}px`,
+                        height: `${heart.size}px`,
                         animation: `floatUp ${heart.duration}ms ease-out forwards`,
                         animationDelay: `${heart.delay}ms`
                     }}
                 >
-                    ❤️
+                    <img
+                        src="/assets/heart.png"
+                        alt="heart"
+                        className="w-full h-full pixelated object-contain"
+                    />
                 </div>
             ))}
 

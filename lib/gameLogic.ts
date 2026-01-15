@@ -1,20 +1,27 @@
 import { TIPS_DB, Tip, TipCategory } from './tipsDb';
 
 export const MAX_HEALTH = 100;
-export const DECAY_AMOUNT = 5;
+export const DECAY_AMOUNT = 10;
+export const DECAY_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours
 
 // Decay Check Logic
 export function checkDecay(lastCheck: number, currentHealth: number, currentStreak: number): { newHealth: number; newStreak: number; decayed: boolean } {
     const now = Date.now();
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
-    if (now - lastCheck > ONE_DAY) {
-        const daysPassed = Math.floor((now - lastCheck) / ONE_DAY);
-        const damage = daysPassed * DECAY_AMOUNT;
-        // If decayed (missed 24h), streak resets
+    if (now - lastCheck > DECAY_INTERVAL) {
+        // Calculate 12h intervals passed
+        const intervalsPassed = Math.floor((now - lastCheck) / DECAY_INTERVAL);
+        const damage = intervalsPassed * DECAY_AMOUNT;
+
+        // Streak Check: If GAP > 24 hours, streak resets.
+        // If simply passed 12h but < 24h, streak is preserved (but health decays)
+        const daysPassed = (now - lastCheck) / ONE_DAY;
+        const streakReset = daysPassed >= 1; // Strict 24h gap resets streak
+
         return {
             newHealth: Math.max(0, currentHealth - damage),
-            newStreak: 0,
+            newStreak: streakReset ? 0 : currentStreak,
             decayed: true
         };
     }
