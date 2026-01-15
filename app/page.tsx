@@ -7,16 +7,55 @@ import { ActionMenu } from "@/components/ActionMenu";
 import { PersistentSpeechBubble } from "@/components/PersistentSpeechBubble";
 import { ThoughtBubble } from "@/components/ThoughtBubble";
 import { HistoryLog } from "@/components/HistoryLog";
+import { CareMenu } from "@/components/CareMenu"; // New
+import { CareModal } from "@/components/CareModal"; // New
 import { generateTip, getRandomMindsetTip } from "@/lib/gameLogic";
 import { useJavier } from "@/lib/hooks/useJavier";
-import { Refrigerator } from "lucide-react";
+import { Refrigerator, Mail } from "lucide-react";
 
 export default function Home() {
-  const { health, streak, updateJavier, history, loading } = useJavier();
+  const { health, streak, updateJavier, history, carePackages, sendCarePackage, consumeCarePackage, loading } = useJavier();
   const [currentTip, setCurrentTip] = useState<string | null>(null);
   const [showTip, setShowTip] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  // User State with Local Storage Persistence
   const [currentUser, setCurrentUser] = useState<"Amit" | "Noa">("Amit");
+  const [userLoaded, setUserLoaded] = useState(false);
+
+  useEffect(() => {
+    // Check local storage on mount
+    const saved = localStorage.getItem('javier_user');
+    if (saved === "Amit" || saved === "Noa") {
+      setCurrentUser(saved);
+    }
+    setUserLoaded(true);
+  }, []);
+
+  const toggleUser = () => {
+    const newUser = currentUser === "Amit" ? "Noa" : "Amit";
+    setCurrentUser(newUser);
+    localStorage.setItem('javier_user', newUser);
+  };
+
+  // Care Logic
+  const [activePkg, setActivePkg] = useState<any>(null);
+
+  // Check for incoming packages for current user
+  const incomingPackage = carePackages.find((p: any) => p.to === currentUser);
+
+  const handleOpenUnknownPackage = () => {
+    if (incomingPackage) {
+      setActivePkg(incomingPackage);
+      // We do NOT consume immediately, only on close (per request "After clicking X... delete")
+    }
+  };
+
+  const handleClosePackage = () => {
+    if (activePkg) {
+      consumeCarePackage(activePkg.id);
+      setActivePkg(null);
+    }
+  };
 
   // Day/Night Logic
   const [isNight, setIsNight] = useState(false);
@@ -72,24 +111,46 @@ export default function Home() {
             <div className="flex flex-col gap-2 flex-1">
               <StatusPanel health={health} streak={streak} />
 
-              {/* Fridge Button (Now below status) */}
-              <button
-                onClick={() => setShowHistory(true)}
-                className="self-start bg-white border-4 border-black p-2 rounded-xl hover:bg-gray-100 active:scale-95 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] flex items-center gap-2"
-              >
-                <Refrigerator className="w-5 h-5 text-blue-500" />
-                <span className="text-[10px] uppercase font-bold text-gray-700">Logs</span>
-              </button>
+              {/* Action Buttons Row */}
+              <div className="flex gap-2">
+                {/* Fridge Button */}
+                <button
+                  onClick={() => setShowHistory(true)}
+                  className="self-start bg-white border-4 border-black p-2 rounded-xl hover:bg-gray-100 active:scale-95 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] flex items-center gap-2"
+                >
+                  <Refrigerator className="w-5 h-5 text-blue-500" />
+                </button>
+                {/* Care Menu */}
+                <CareMenu
+                  currentUser={currentUser}
+                  onSend={sendCarePackage}
+                  hasSentPackage={carePackages.some((p: any) => p.from === currentUser)}
+                />
+              </div>
             </div>
 
-            {/* Right: User Toggle */}
-            <button
-              onClick={() => setCurrentUser(prev => prev === "Amit" ? "Noa" : "Amit")}
-              className={`flex flex-col items-center justify-center p-2 border-4 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all ${currentUser === "Amit" ? "bg-blue-100" : "bg-pink-100"} text-gray-900`}
-            >
-              <span className="text-2xl">{currentUser === "Amit" ? "👨🏻‍🦰" : "👩🏻"}</span>
-              <span className="text-[10px] uppercase font-bold mt-1">{currentUser}</span>
-            </button>
+            {/* Right Column: User Toggle & Envelope */}
+            <div className="flex flex-col items-center gap-4">
+              {/* User Toggle */}
+              <button
+                onClick={toggleUser}
+                disabled={!userLoaded}
+                className={`flex flex-col items-center justify-center p-2 border-4 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all ${currentUser === "Amit" ? "bg-blue-100" : "bg-pink-100"} text-gray-900`}
+              >
+                <span className="text-2xl">{currentUser === "Amit" ? "👨🏻‍🦰" : "👩🏻"}</span>
+                <span className="text-[10px] uppercase font-bold mt-1">{currentUser}</span>
+              </button>
+
+              {/* Floating Envelope (Notification) */}
+              {incomingPackage && (
+                <button
+                  onClick={handleOpenUnknownPackage}
+                  className="animate-bounce hover:scale-110 transition-transform w-[64px] h-[64px] flex items-center justify-center p-1"
+                >
+                  <img src="/assets/letter.png" alt="Care Package" className="w-full h-full pixelated object-contain drop-shadow-xl filter" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Spacer - Flexible but pushes Javier higher up than before */}
@@ -117,6 +178,11 @@ export default function Home() {
           history={history}
           isVisible={showHistory}
           onClose={() => setShowHistory(false)}
+        />
+
+        <CareModal
+          pkg={activePkg}
+          onClose={handleClosePackage}
         />
       </div>
     </div>

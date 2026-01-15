@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { doc, onSnapshot, setDoc, updateDoc, getDoc, arrayUnion } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
 import { calculateHealth, checkDecay, calculateStreak } from "../gameLogic";
 
@@ -10,6 +10,7 @@ export function useJavier() {
     const [streak, setStreak] = useState(0);
     const [lastCheck, setLastCheck] = useState(Date.now());
     const [history, setHistory] = useState<any[]>([]);
+    const [carePackages, setCarePackages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Sync with Firestore
@@ -28,6 +29,7 @@ export function useJavier() {
                 setStreak(data.streak || 0);
                 setLastCheck(data.last_check || Date.now());
                 setHistory(data.history || []);
+                setCarePackages(data.care_packages || []);
 
                 // Check for decay on load/update
                 const { newHealth, newStreak, decayed } = checkDecay(data.last_check || Date.now(), data.health, data.streak || 0);
@@ -40,7 +42,8 @@ export function useJavier() {
                     health: 75,
                     streak: 0,
                     last_check: Date.now(),
-                    history: []
+                    history: [],
+                    care_packages: []
                 });
             }
             setLoading(false);
@@ -90,5 +93,26 @@ export function useJavier() {
         await updateDoc(ref, { health: h, streak: s, last_check: Date.now() });
     };
 
-    return { health, streak, updateJavier, history: history || [], loading };
+    const sendCarePackage = async (type: string, fromUser: string, toUser: string) => {
+        if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) return;
+        const ref = doc(db, DOC_ID);
+        await updateDoc(ref, {
+            care_packages: arrayUnion({
+                id: Date.now().toString(),
+                timestamp: Date.now(),
+                type,
+                from: fromUser,
+                to: toUser
+            })
+        });
+    };
+
+    const consumeCarePackage = async (packageId: string) => {
+        if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) return;
+        const newPackages = carePackages.filter(p => p.id !== packageId);
+        const ref = doc(db, DOC_ID);
+        await updateDoc(ref, { care_packages: newPackages });
+    };
+
+    return { health, streak, updateJavier, history: history || [], carePackages: carePackages || [], sendCarePackage, consumeCarePackage, loading };
 }
