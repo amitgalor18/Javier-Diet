@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
-import { calculateHealth, checkDecay, calculateStreak } from "../gameLogic";
+import { calculateHealth, checkDecay, recalculateStreakFromHistory } from "../gameLogic";
 
 const DOC_ID = "couples_state/our_apartment";
 
@@ -31,10 +31,19 @@ export function useJavier() {
                 setHistory(data.history || []);
                 setCarePackages(data.care_packages || []);
 
+                // Get last action time for streak logic (but use recalculate for true streak)
+                const historyArr = data.history || [];
+                const lastActionTime = historyArr.length > 0 ? historyArr[historyArr.length - 1].timestamp : Date.now();
+
+                // Recalculate streak from history source of truth
+                const trueStreak = recalculateStreakFromHistory(historyArr);
+                setStreak(trueStreak);
+
                 // Check for decay on load/update
-                const { newHealth, newStreak, decayed } = checkDecay(data.last_check || Date.now(), data.health, data.streak || 0);
+                // We ignore checkDecay's streak return now as we use trueStreak
+                const { newHealth, decayed } = checkDecay(data.last_check || Date.now(), lastActionTime, data.health, trueStreak);
                 if (decayed) {
-                    updateJavierState(newHealth, newStreak);
+                    updateJavierState(newHealth, trueStreak);
                 }
             } else {
                 // Init doc if missing
@@ -58,7 +67,10 @@ export function useJavier() {
 
     const updateJavier = async (change: number, user: string = "Unknown") => {
         const newHealth = calculateHealth(health, change);
-        const newStreak = calculateStreak(streak, lastCheck);
+
+        // Calculate new streak based on PREDICTED history
+        const simulatedHistory = [...history, { timestamp: Date.now() }];
+        const newStreak = recalculateStreakFromHistory(simulatedHistory);
 
         if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
             setHealth(newHealth);
