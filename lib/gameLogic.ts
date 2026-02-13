@@ -1,7 +1,7 @@
 import { TIPS_DB, Tip, TipCategory } from './tipsDb';
 
 export const MAX_HEALTH = 100;
-export const DECAY_AMOUNT = 10;
+export const DECAY_AMOUNT = 5;
 export const DECAY_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours
 
 // Decay Check Logic

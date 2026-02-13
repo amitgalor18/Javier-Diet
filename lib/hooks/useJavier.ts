@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, ensureAnonAuth } from "../firebase";
 import { calculateHealth, checkDecay, recalculateStreakFromHistory } from "../gameLogic";
 
 const DOC_ID = "couples_state/our_apartment";
@@ -22,47 +22,65 @@ export function useJavier() {
             return;
         }
 
-        const unsub = onSnapshot(doc(db, DOC_ID), (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setHealth(data.health);
-                setStreak(data.streak || 0);
-                setLastCheck(data.last_check || Date.now());
-                setHistory(data.history || []);
-                setCarePackages(data.care_packages || []);
+        let unsub: (() => void) | undefined;
 
-                // Get last action time for streak logic (but use recalculate for true streak)
-                const historyArr = data.history || [];
-                const lastActionTime = historyArr.length > 0 ? historyArr[historyArr.length - 1].timestamp : Date.now();
+        const init = async () => {
+            try {
+                // Make sure we are authenticated (anonymously) before touching Firestore
+                await ensureAnonAuth();
 
-                // Recalculate streak from history source of truth
-                const trueStreak = recalculateStreakFromHistory(historyArr);
-                setStreak(trueStreak);
+                unsub = onSnapshot(doc(db, DOC_ID), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setHealth(data.health);
+                        setStreak(data.streak || 0);
+                        setLastCheck(data.last_check || Date.now());
+                        setHistory(data.history || []);
+                        setCarePackages(data.care_packages || []);
 
-                // Check for decay on load/update
-                // We ignore checkDecay's streak return now as we use trueStreak
-                const { newHealth, decayed } = checkDecay(data.last_check || Date.now(), lastActionTime, data.health, trueStreak);
-                if (decayed) {
-                    updateJavierState(newHealth, trueStreak);
-                }
-            } else {
-                // Init doc if missing
-                setDoc(doc(db, DOC_ID), {
-                    health: 75,
-                    streak: 0,
-                    last_check: Date.now(),
-                    history: [],
-                    care_packages: []
+                        // Get last action time for streak logic (but use recalculate for true streak)
+                        const historyArr = data.history || [];
+                        const lastActionTime = historyArr.length > 0 ? historyArr[historyArr.length - 1].timestamp : Date.now();
+
+                        // Recalculate streak from history source of truth
+                        const trueStreak = recalculateStreakFromHistory(historyArr);
+                        setStreak(trueStreak);
+
+                        // Check for decay on load/update
+                        // We ignore checkDecay's streak return now as we use trueStreak
+                        const { newHealth, decayed } = checkDecay(data.last_check || Date.now(), lastActionTime, data.health, trueStreak);
+                        if (decayed) {
+                            updateJavierState(newHealth, trueStreak);
+                        }
+                    } else {
+                        // Init doc if missing
+                        setDoc(doc(db, DOC_ID), {
+                            health: 75,
+                            streak: 0,
+                            last_check: Date.now(),
+                            history: [],
+                            care_packages: []
+                        });
+                    }
+                    setLoading(false);
+                }, (err) => {
+                    console.error("Firestore sync error:", err);
+                    // Fallback or handle error
+                    setLoading(false);
                 });
+            } catch (e) {
+                console.error("Failed to initialize Firebase anonymous auth / Firestore:", e);
+                setLoading(false);
             }
-            setLoading(false);
-        }, (err) => {
-            console.error("Firestore sync error:", err);
-            // Fallback or handle error
-            setLoading(false);
-        });
+        };
 
-        return () => unsub();
+        init();
+
+        return () => {
+            if (unsub) {
+                unsub();
+            }
+        };
     }, []);
 
     const updateJavier = async (change: number, user: string = "Unknown") => {
@@ -77,6 +95,9 @@ export function useJavier() {
             setStreak(newStreak);
             return;
         }
+
+        // Ensure we have an anonymous auth user before writing
+        await ensureAnonAuth();
 
         try {
             const ref = doc(db, DOC_ID);
@@ -101,12 +122,14 @@ export function useJavier() {
 
     const updateJavierState = async (h: number, s: number) => {
         if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) return;
+        await ensureAnonAuth();
         const ref = doc(db, DOC_ID);
         await updateDoc(ref, { health: h, streak: s, last_check: Date.now() });
     };
 
     const sendCarePackage = async (type: string, fromUser: string, toUser: string) => {
         if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) return;
+        await ensureAnonAuth();
         const ref = doc(db, DOC_ID);
         await updateDoc(ref, {
             care_packages: arrayUnion({
@@ -121,6 +144,7 @@ export function useJavier() {
 
     const consumeCarePackage = async (packageId: string) => {
         if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) return;
+        await ensureAnonAuth();
         const newPackages = carePackages.filter(p => p.id !== packageId);
         const ref = doc(db, DOC_ID);
         await updateDoc(ref, { care_packages: newPackages });
